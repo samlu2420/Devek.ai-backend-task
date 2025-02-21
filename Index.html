@@ -25,23 +25,29 @@
     <div id="events"></div>
 
     <script>
-        const ws = new WebSocket('ws://localhost:1234');
+        let ws;
         let receiveUpdates = false;
 
-        ws.onopen = () => {
-            console.log('WebSocket connection established');
-        };
+        function initializeWebSocket() {
+            ws = new WebSocket('ws://localhost:1234');
 
-        ws.onmessage = (event) => {
-            if (receiveUpdates) {
-                console.log('Message from server:', event.data);
-                displayMessage(event.data);
-            }
-        };
+            ws.onopen = () => {
+                console.log('WebSocket connection established');
+            };
 
-        ws.onclose = () => {
-            console.log('WebSocket connection closed');
-        };
+            ws.onmessage = (event) => {
+                if (receiveUpdates) {
+                    console.log('Message from server:', event.data);
+                    displayMessage(event.data);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket connection closed');
+            };
+        }
+
+        initializeWebSocket();
 
         function sendEvent(eventType) {
             const userId = document.getElementById('userId').value;
