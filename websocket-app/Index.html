@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Frontend</title>
+</head>
+<body>
+    <h1>Frontend</h1>
+    <div>
+        <label for="userId">User ID:</label>
+        <input type="text" id="userId" placeholder="Enter user ID">
+    </div>
+    <div>
+        <button onclick="sendEvent('login')">Login</button>
+        <button onclick="sendEvent('logout')">Logout</button>
+        <button onclick="sendEvent('file_open')">File Open</button>
+        <button onclick="sendEvent('file_save')">File Save</button>
+    </div>
+    <div>
+        <button onclick="fetchRecentEvents()">Fetch Recent Events</button>
+    </div>
+    <div>
+        <label for="receiveUpdates">Receive updates from WebSocket server:</label>
+        <input type="checkbox" id="receiveUpdates" onchange="toggleWebSocketUpdates()">
+    </div>
+    <div id="events"></div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:1234');
+        let receiveUpdates = false;
+
+        ws.onopen = () => {
+            console.log('WebSocket connection established');
+        };
+
+        ws.onmessage = (event) => {
+            if (receiveUpdates) {
+                console.log('Message from server:', event.data);
+                displayMessage(event.data);
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
+
+        function sendEvent(eventType) {
+            const userId = document.getElementById('userId').value;
+            if (!userId) {
+                alert('Please enter a user ID');
+                return;
+            }
+            const event = {
+                userId: userId,
+                eventType: eventType,
+                timestamp: new Date()
+            };
+            ws.send(JSON.stringify(event));
+            console.log('Event sent:', event);
+        }
+
+        async function fetchRecentEvents() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) {
+                alert('Please enter a user ID');
+                return;
+            }
+            try {
+                const response = await fetch(`http://localhost:3000/event/recent?userId=${userId}`);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const events = await response.json();
+                displayEvents(events);
+            } catch (error) {
+                console.error('Error fetching recent events:', error);
+            }
+        }
+
+        function displayEvents(events) {
+            const eventsDiv = document.getElementById('events');
+            eventsDiv.innerHTML = '<h2>Recent Events</h2>';
+            events.forEach(event => {
+                displayEvent(event);
+            });
+        }
+
+        function displayEvent(event) {
+            const eventsDiv = document.getElementById('events');
+            const eventElement = document.createElement('div');
+            eventElement.textContent = `Event Type: ${event.eventType}, Timestamp: ${event.timestamp}, User ID: ${event.userId}, Server Timestamp: ${event.timestampServer}`;
+            eventsDiv.appendChild(eventElement);
+            eventsDiv.appendChild(document.createElement('br'));
+        }
+
+        function displayMessage(message) {
+            const eventsDiv = document.getElementById('events');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message;
+            eventsDiv.appendChild(messageElement);
+            eventsDiv.appendChild(document.createElement('br'));
+        }
+
+        function toggleWebSocketUpdates() {
+            receiveUpdates = document.getElementById('receiveUpdates').checked;
+        }
+    </script>
+</body>
+</html>
